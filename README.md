@@ -31,6 +31,7 @@
 - Python 3.8+
 - 豆包API密钥（DOUBAO_API_KEY）
 - 雪球API Token（xq_a_token）
+- 建议使用包含 OpenSSL 1.1.1+ 的 Python 发行版；在 macOS 默认 LibreSSL 环境下，如遇 `urllib3 v2 only supports OpenSSL` 提示，可通过将 `urllib3` 固定为 `<2` 版本解决（见 `backend/requirements.txt`）
 
 ## 快速开始
 
@@ -120,16 +121,19 @@ stock_analysis_doubao_resp/
 ## 常见问题
 
 ### Q: 如何获取豆包API密钥？
-A: 访问豆包开放平台，注册账号并创建应用获取API密钥。
+A: 访问火山引擎控制台，注册账号并创建应用获取API密钥。地址：https://console.volcengine.com/
 
 ### Q: 如何获取雪球Token？
-A: 访问雪球网站，登录后从浏览器开发者工具中获取 `xq_a_token`。
+A: 访问雪球网站，登录后从浏览器开发者工具中获取 `xq_a_token`。参考项目：https://github.com/uname-yang/pysnowball
 
 ### Q: 对话记录保存在哪里？
 A: 保存在 `files/{conversation_id}/` 目录下，包含JSON和Markdown两种格式。
 
 ### Q: 支持哪些股票市场？
 A: 目前支持A股市场（上海和深圳证券交易所）。
+
+### Q: 在 macOS 上运行 `pip install -r requirements.txt` 提示 `zsh: command not found: pip` 怎么办？
+A: 可以参考 `docs/pip_command_not_found_mac.md`，其中包含从检查 Python 与 pip 环境、到推荐的虚拟环境安装方式的完整排查步骤。生产环境中建议优先使用 `python -m pip` 或 `python3 -m pip` 安装依赖，以避免 PATH 相关问题。
 
 ## 开发说明
 

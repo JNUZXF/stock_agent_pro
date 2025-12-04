@@ -162,9 +162,8 @@ class StockAnalysisTool:
         stock_info = get_stock_info(symbol)
         return stock_info
 
-
 class StockAnalysisAgent:
-    """论文搜索智能体
+    """股票分析智能体
     
     支持根据用户问题自主判断是否需要调用工具，并返回流式响应。
     """
@@ -399,7 +398,7 @@ class StockAnalysisAgent:
     def run_interactive(self):
         """启动命令行交互式对话"""
         print("=" * 80)
-        print("欢迎使用论文搜索智能体")
+        print("欢迎使用股票分析智能体")
         print(f"会话ID: {self.conversation_id}")
         print(f"对话记录将保存到: {self.conversation_dir}")
         print("输入 'quit' 或 'exit' 退出程序")
@@ -433,6 +432,7 @@ class StockAnalysisAgent:
 if __name__ == "__main__":
     """
     分析一下SZ:002384这只股票，给出详细的股票分析报告。
+    分析一下SH600745这只股票，给出详细的股票分析报告。
     """
     agent = StockAnalysisAgent()
     agent.run_interactive()
