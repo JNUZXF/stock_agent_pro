@@ -13,6 +13,12 @@
 - 📝 **对话记录保存**：自动保存每次对话的JSON和Markdown格式记录
 - 🎨 **精美UI设计**：参考Arctic Echo设计的极地风格界面
 
+### 界面预览
+
+下图为股票分析智能体的实际界面效果示例（深度分析报告展示）：
+
+![Stock Analysis Agent Demo](./images/AgentDemo.png)
+
 ## 功能特性
 
 - **多维度数据获取**：
@@ -96,6 +102,98 @@ npm run dev  # 或 yarn dev / pnpm dev
 
 在浏览器中打开 `http://localhost:5173` 即可使用股票分析智能体。
 
+## Docker部署（推荐）
+
+使用Docker可以一键启动前后端服务，无需手动配置环境。
+
+### 前置要求
+
+- Docker 20.10+
+- Docker Compose 2.0+（或Docker Desktop内置的docker compose）
+
+### 启动Docker
+
+**macOS/Windows（Docker Desktop）：**
+- 打开Docker Desktop应用，等待Docker daemon启动完成
+
+**Linux：**
+```bash
+sudo systemctl start docker
+# 或
+sudo service docker start
+```
+
+### 快速启动
+
+1. **创建环境变量文件**
+
+在项目根目录创建 `.env` 文件：
+
+```env
+DOUBAO_API_KEY=your_doubao_api_key
+xq_a_token=your_xueqiu_token
+```
+
+**注意**：如果暂时没有API密钥，可以先创建空的`.env`文件，服务仍可启动，但无法调用API。
+
+2. **启动服务**
+
+```bash
+# 生产环境（推荐）
+docker compose up -d
+
+# 或者开发环境（支持热重载）
+docker compose -f docker-compose.dev.yml up -d
+```
+
+**注意**：新版本的Docker使用 `docker compose`（带空格），旧版本使用 `docker-compose`（带横线）。如果命令不识别，请尝试：
+```bash
+docker-compose up -d  # 旧版本
+```
+
+3. **访问应用**
+
+- 前端：`http://localhost`（生产环境）或 `http://localhost:5173`（开发环境）
+- 后端API：`http://localhost:8000`
+- API文档：`http://localhost:8000/docs`
+
+### Docker命令说明
+
+```bash
+# 启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重新构建镜像
+docker-compose build --no-cache
+
+# 查看服务状态
+docker-compose ps
+
+# 进入容器
+docker-compose exec backend bash
+docker-compose exec frontend sh
+```
+
+### 数据持久化
+
+对话记录会自动保存到 `backend/files/` 目录，即使容器重启也不会丢失。
+
+### 生产环境优化
+
+生产环境建议：
+
+1. **使用环境变量**：通过Docker环境变量或K8s Secret注入敏感信息
+2. **配置反向代理**：使用Nginx或Traefik作为反向代理
+3. **启用HTTPS**：配置SSL证书
+4. **资源限制**：在docker-compose.yml中配置CPU和内存限制
+5. **日志管理**：配置日志驱动和日志轮转
+
 ## 命令行模式（可选）
 
 如果需要使用命令行交互模式：
@@ -124,6 +222,7 @@ python stock_agent.py
 ```
 stock_analysis_doubao_resp/
 ├── backend/                    # 后端服务
+│   ├── Dockerfile              # 后端Docker镜像构建文件
 │   ├── main.py                 # FastAPI应用入口
 │   ├── stock_agent.py          # 股票分析Agent核心逻辑
 │   ├── requirements.txt         # Python依赖列表
@@ -137,6 +236,9 @@ stock_analysis_doubao_resp/
 │           ├── conversation.json
 │           └── conversation.md
 ├── frontend/                    # 前端应用
+│   ├── Dockerfile               # 前端生产环境Docker镜像
+│   ├── Dockerfile.dev           # 前端开发环境Docker镜像
+│   ├── nginx.conf               # Nginx配置文件
 │   ├── src/
 │   │   ├── App.tsx             # 主应用组件
 │   │   ├── main.tsx            # 入口文件
@@ -153,6 +255,9 @@ stock_analysis_doubao_resp/
 │   │       └── index.ts
 │   ├── package.json            # Node.js依赖
 │   └── vite.config.ts          # Vite配置
+├── docker-compose.yml          # Docker Compose生产环境配置
+├── docker-compose.dev.yml      # Docker Compose开发环境配置
+├── .dockerignore               # Docker构建忽略文件
 ├── docs/                       # 文档目录
 │   └── 架构设计.md            # 架构设计文档
 └── README.md                   # 项目说明

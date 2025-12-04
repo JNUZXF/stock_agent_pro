@@ -23,3 +23,15 @@ export interface ChatChunkResponse {
   error?: string;
 }
 
+// 后端API返回的消息类型
+export interface ApiMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+// 后端API返回的会话详情类型
+export interface ConversationDetail {
+  id: string;
+  messages: ApiMessage[];
+}
+

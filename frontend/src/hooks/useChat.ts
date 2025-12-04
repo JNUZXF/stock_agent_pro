@@ -2,7 +2,7 @@
 // 聊天逻辑Hook，处理消息发送和接收
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Message, ChatSession } from '../types';
+import { Message, ChatSession, ApiMessage } from '../types';
 import { sendChatMessage, getConversations, getConversationDetail } from '../services/api';
 
 // localStorage键名
@@ -164,7 +164,7 @@ export const useChat = () => {
         const detail = await getConversationDetail(session.id);
         if (detail.messages && detail.messages.length > 0) {
           // 转换为前端Message格式
-          const formattedMessages: Message[] = detail.messages.map((msg, index) => ({
+          const formattedMessages: Message[] = detail.messages.map((msg: ApiMessage, index: number) => ({
             id: `${session.id}_${index}_${msg.role}`,
             role: msg.role === 'user' ? 'user' : 'ai',
             content: msg.content,
@@ -212,7 +212,7 @@ export const useChat = () => {
           getConversationDetail(savedConversationId)
             .then(detail => {
               if (detail.messages && detail.messages.length > 0) {
-                const formattedMessages: Message[] = detail.messages.map((msg, index) => ({
+                const formattedMessages: Message[] = detail.messages.map((msg: ApiMessage, index: number) => ({
                   id: `${savedConversationId}_${index}_${msg.role}`,
                   role: msg.role === 'user' ? 'user' : 'ai',
                   content: msg.content,

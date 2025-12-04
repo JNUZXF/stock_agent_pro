@@ -1,0 +1,72 @@
+# .dockerignore
+# Docker构建时忽略的文件和目录
+
+# Git相关
+.git
+.gitignore
+.gitattributes
+
+# Python相关
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+.venv
+venv
+env
+ENV
+
+# Node相关
+node_modules
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
+dist
+.next
+.nuxt
+.cache
+
+# IDE相关
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# 环境变量文件（生产环境应该通过docker-compose或K8s注入）
+.env
+.env.local
+.env.*.local
+
+# 文档和测试
+docs
+*.md
+!README.md
+tests
+test_*.py
+*_test.py
+*.ipynb
+
+# 日志文件
+*.log
+logs
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+tmp
+temp
+*.tmp
+
+# 对话记录（开发环境，生产环境应该使用volume）
+backend/files/*
+!backend/files/.gitkeep
+

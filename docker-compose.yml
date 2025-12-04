@@ -1,0 +1,52 @@
+# docker-compose.yml
+# Docker Compose编排文件，用于一键启动前后端服务
+
+services:
+  # 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stock_analysis_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DOUBAO_API_KEY=${DOUBAO_API_KEY:-}
+      - xq_a_token=${xq_a_token:-}
+    volumes:
+      # 持久化对话记录
+      - ./backend/files:/app/files
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - stock_analysis_network
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: stock_analysis_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - stock_analysis_network
+
+networks:
+  stock_analysis_network:
+    driver: bridge
+
+volumes:
+  files_data:
+    driver: local
+

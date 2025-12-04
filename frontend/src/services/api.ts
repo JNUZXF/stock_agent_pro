@@ -1,7 +1,7 @@
 // frontend/src/services/api.ts
 // API调用服务，处理与后端的通信
 
-import { ChatChunkResponse, ChatSession } from '../types';
+import { ChatChunkResponse, ChatSession, ConversationDetail } from '../types';
 
 const API_BASE_URL = '/api';
 
@@ -121,7 +121,7 @@ export async function getConversations(): Promise<ChatSession[]> {
 /**
  * 获取会话详情
  */
-export async function getConversationDetail(conversationId: string) {
+export async function getConversationDetail(conversationId: string): Promise<ConversationDetail> {
   const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}`);
   if (!response.ok) {
     throw new Error('获取会话详情失败');

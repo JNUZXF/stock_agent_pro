@@ -1,0 +1,50 @@
+# docker-compose.dev.yml
+# 开发环境Docker Compose配置（支持热重载）
+
+services:
+  # 后端服务（开发模式）
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stock_analysis_backend_dev
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DOUBAO_API_KEY=${DOUBAO_API_KEY:-}
+      - xq_a_token=${xq_a_token:-}
+    volumes:
+      # 挂载代码目录，支持热重载
+      - ./backend:/app
+      - ./backend/files:/app/files
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    networks:
+      - stock_analysis_network
+
+  # 前端服务（开发模式）
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: stock_analysis_frontend_dev
+    ports:
+      - "5173:5173"
+    volumes:
+      # 挂载代码目录，支持热重载
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - stock_analysis_network
+
+networks:
+  stock_analysis_network:
+    driver: bridge
+
