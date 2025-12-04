@@ -1,0 +1,4 @@
+openai>=1.0.0
+pysnowball>=0.1.8
+python-dotenv>=1.0.0
+
