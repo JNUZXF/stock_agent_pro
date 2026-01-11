@@ -18,6 +18,8 @@ services:
     volumes:
       # 持久化对话记录
       - ./backend/files:/app/files
+      # 持久化数据库（如果使用SQLite）
+      - ./backend/data:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
