@@ -14,6 +14,9 @@ export interface ChatSession {
   title: string;
   date: string;
   summary: string;
+  message_count?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface ChatChunkResponse {
@@ -31,7 +34,13 @@ export interface ApiMessage {
 
 // 后端API返回的会话详情类型
 export interface ConversationDetail {
-  id: string;
+  id: number;
+  conversation_id: string;
+  title?: string;
+  summary?: string;
+  message_count: number;
+  created_at: string;
+  updated_at: string;
   messages: ApiMessage[];
 }
 

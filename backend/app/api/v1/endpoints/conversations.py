@@ -8,23 +8,57 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.services.conversation_service import ConversationService
 from app.schemas.conversation import (
+    ConversationCreate,
     ConversationResponse,
     ConversationDetail,
     ConversationUpdate,
     ConversationSummary,
     MessageResponse
 )
-from app.core.security import get_current_user_id
+from app.core.security import get_current_user_id_or_default
 from app.core.exceptions import ResourceNotFoundError, AuthorizationError
 
 router = APIRouter()
+
+
+@router.post("/conversations", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
+def create_conversation(
+    conversation_data: ConversationCreate,
+    user_id: str = Depends(get_current_user_id_or_default),
+    db: Session = Depends(get_db)
+):
+    """
+    创建新对话
+
+    Args:
+        conversation_data: 对话数据
+        user_id: 用户ID（从Token获取）
+        db: 数据库会话
+
+    Returns:
+        创建的对话
+    """
+    try:
+        conversation_service = ConversationService(db)
+        conversation = conversation_service.create_conversation(
+            user_id=int(user_id),
+            conversation_data=conversation_data
+        )
+
+        return conversation
+
+    except ResourceNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
 
 
 @router.get("/conversations", response_model=List[ConversationResponse])
 def get_conversations(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id_or_default),
     db: Session = Depends(get_db)
 ):
     """
@@ -52,7 +86,7 @@ def get_conversations(
 @router.get("/conversations/{conversation_id}", response_model=ConversationDetail)
 def get_conversation(
     conversation_id: str,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id_or_default),
     db: Session = Depends(get_db)
 ):
     """
@@ -107,7 +141,7 @@ def get_conversation(
 def update_conversation(
     conversation_id: str,
     update_data: ConversationUpdate,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id_or_default),
     db: Session = Depends(get_db)
 ):
     """
@@ -147,7 +181,7 @@ def update_conversation(
 @router.delete("/conversations/{conversation_id}")
 def delete_conversation(
     conversation_id: str,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id_or_default),
     db: Session = Depends(get_db)
 ):
     """
@@ -187,7 +221,7 @@ def get_messages(
     conversation_id: str,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id_or_default),
     db: Session = Depends(get_db)
 ):
     """

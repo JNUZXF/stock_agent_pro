@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.services.chat_service import ChatService
 from app.schemas.chat import ChatRequest, ChatChunkResponse
-from app.core.security import get_current_user_id
+from app.core.security import get_current_user_id_or_default
 from app.core.exceptions import AgentExecutionError
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ router = APIRouter()
 @router.post("/chat")
 async def chat(
     request: ChatRequest,
-    user_id: str = Depends(get_current_user_id),
+    user_id: str = Depends(get_current_user_id_or_default),
     db: Session = Depends(get_db)
 ):
     """

@@ -4,7 +4,7 @@
 """
 from typing import Optional, List
 from pydantic_settings import BaseSettings
-from pydantic import Field, validator
+from pydantic import Field, field_validator, model_validator
 import os
 from functools import lru_cache
 
@@ -59,7 +59,14 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
 
     # AI模型配置
+    # 支持 AI_API_KEY 和 DOUBAO_API_KEY 两种环境变量名称
     AI_API_KEY: Optional[str] = Field(default=None, env="AI_API_KEY")
+    
+    @property
+    def effective_ai_api_key(self) -> Optional[str]:
+        """获取有效的AI API密钥（支持DOUBAO_API_KEY作为备选）"""
+        import os
+        return self.AI_API_KEY or os.getenv("DOUBAO_API_KEY")
     AI_BASE_URL: str = Field(
         default="https://ark.cn-beijing.volces.com/api/v3",
         env="AI_BASE_URL"
@@ -99,19 +106,20 @@ class Settings(BaseSettings):
     METRICS_ENABLED: bool = Field(default=True, env="METRICS_ENABLED")
     SENTRY_DSN: Optional[str] = Field(default=None, env="SENTRY_DSN")
 
-    @validator("CORS_ORIGINS", pre=True)
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
     def parse_cors_origins(cls, v):
         """解析CORS origins"""
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
         return v
 
-    @validator("SECRET_KEY")
-    def validate_secret_key(cls, v, values):
+    @model_validator(mode="after")
+    def validate_secret_key(self):
         """验证生产环境必须修改密钥"""
-        if values.get("ENVIRONMENT") == "production" and v == "your-secret-key-change-in-production":
+        if self.ENVIRONMENT == "production" and self.SECRET_KEY == "your-secret-key-change-in-production":
             raise ValueError("生产环境必须设置安全的SECRET_KEY")
-        return v
+        return self
 
     @property
     def is_production(self) -> bool:

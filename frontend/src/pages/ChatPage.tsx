@@ -225,9 +225,9 @@ export default function ChatPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
                   {[
                     '分析 SZ000001',
-                    '特斯拉最新走势',
-                    '对比苹果和微软',
-                    '推荐科技股',
+                    '贵州茅台怎么样',
+                    '给出立讯精密的报告',
+                    '分析歌尔股份',
                   ].map((example, idx) => (
                     <motion.button
                       key={idx}

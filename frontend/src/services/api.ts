@@ -18,7 +18,7 @@ export function sendChatMessage(
   // 使用fetch + ReadableStream实现SSE流式接收
   const controller = new AbortController();
   
-  fetch(`${API_BASE_URL}/chat`, {
+  fetch(`${API_BASE_URL}/v1/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -110,22 +110,70 @@ export function sendChatMessage(
  * 获取会话列表
  */
 export async function getConversations(): Promise<ChatSession[]> {
-  const response = await fetch(`${API_BASE_URL}/conversations`);
+  const response = await fetch(`${API_BASE_URL}/v1/conversations`);
   if (!response.ok) {
     throw new Error('获取会话列表失败');
   }
   const data = await response.json();
-  return data.conversations || [];
+  // 后端直接返回数组，需要转换为前端格式
+  if (Array.isArray(data)) {
+    return data.map((conv: any) => ({
+      id: conv.conversation_id,
+      title: conv.title || `对话 ${conv.conversation_id.slice(-6)}`,
+      date: new Date(conv.created_at).toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      }),
+      summary: conv.summary || '暂无摘要',
+      message_count: conv.message_count,
+      created_at: conv.created_at,
+      updated_at: conv.updated_at
+    }));
+  }
+  return [];
 }
 
 /**
  * 获取会话详情
  */
 export async function getConversationDetail(conversationId: string): Promise<ConversationDetail> {
-  const response = await fetch(`${API_BASE_URL}/conversations/${conversationId}`);
+  const response = await fetch(`${API_BASE_URL}/v1/conversations/${conversationId}`);
   if (!response.ok) {
     throw new Error('获取会话详情失败');
   }
   return await response.json();
 }
 
+/**
+ * 创建新对话
+ */
+export async function createConversation(conversationId: string, title?: string): Promise<ChatSession> {
+  const response = await fetch(`${API_BASE_URL}/v1/conversations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      conversation_id: conversationId,
+      title: title || `新对话 ${conversationId.slice(-6)}`,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('创建对话失败');
+  }
+  const data = await response.json();
+  return {
+    id: data.conversation_id,
+    title: data.title || `对话 ${data.conversation_id.slice(-6)}`,
+    date: new Date(data.created_at).toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }),
+    summary: data.summary || '暂无摘要',
+    message_count: data.message_count,
+    created_at: data.created_at,
+    updated_at: data.updated_at
+  };
+}

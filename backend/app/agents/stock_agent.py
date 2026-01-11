@@ -37,10 +37,19 @@ class StockAnalysisAgent(BaseAgent):
         """
         super().__init__(user_id, conversation_id)
 
-        # AI服务配置
-        self.api_key = api_key or settings.AI_API_KEY
+        # AI服务配置（支持多种环境变量名称）
+        self.api_key = api_key or settings.effective_ai_api_key
         self.base_url = base_url or settings.AI_BASE_URL
         self.model = model or settings.AI_MODEL
+        
+        # 验证API密钥是否存在
+        if not self.api_key:
+            raise ValueError(
+                "API密钥未设置。请设置以下环境变量之一：\n"
+                "- AI_API_KEY (推荐)\n"
+                "- DOUBAO_API_KEY (备选)\n"
+                "或者在初始化时直接传递 api_key 参数"
+            )
 
         # 创建OpenAI客户端
         self.client = OpenAI(
@@ -176,7 +185,7 @@ class StockAnalysisAgent(BaseAgent):
 
                     self.add_message(
                         "assistant",
-                        content=full_content or None,
+                        content=full_content if full_content else "",
                         tool_calls=tool_calls_for_message
                     )
 

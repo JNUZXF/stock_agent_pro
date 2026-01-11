@@ -1,7 +1,7 @@
 """
 认证相关Schemas
 """
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 
 
@@ -11,8 +11,9 @@ class UserRegister(BaseModel):
     email: EmailStr = Field(..., description="邮箱")
     password: str = Field(..., min_length=6, max_length=100, description="密码")
 
-    @validator("username")
-    def validate_username(cls, v):
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
         """验证用户名格式"""
         if not v.replace("_", "").replace("-", "").isalnum():
             raise ValueError("用户名只能包含字母、数字、下划线和连字符")

@@ -29,8 +29,8 @@ class Message(Base, BaseModel):
     function_call = Column(JSON, nullable=True)
     tool_calls = Column(JSON, nullable=True)
 
-    # 元数据
-    metadata = Column(JSON, nullable=True)
+    # 元数据（注意：不能使用 metadata 作为属性名，因为它是 SQLAlchemy 的保留字）
+    message_metadata = Column("metadata", JSON, nullable=True)
 
     # 关系
     conversation = relationship("Conversation", back_populates="messages")
@@ -51,7 +51,7 @@ class Message(Base, BaseModel):
         if self.tool_calls:
             result["tool_calls"] = self.tool_calls
 
-        if self.metadata:
-            result["metadata"] = self.metadata
+        if self.message_metadata:
+            result["metadata"] = self.message_metadata
 
         return result

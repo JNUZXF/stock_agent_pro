@@ -200,6 +200,10 @@ class ConversationService:
         # 创建消息
         message_dict = message_data.model_dump()
         message_dict["conversation_id"] = conversation.id
+        
+        # 将 metadata 映射到 message_metadata（因为 SQLAlchemy 中 metadata 是保留字）
+        if "metadata" in message_dict:
+            message_dict["message_metadata"] = message_dict.pop("metadata")
 
         message = self.message_repo.create(message_dict)
 

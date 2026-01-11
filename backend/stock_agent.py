@@ -253,9 +253,6 @@ class StockAnalysisTool:
         stock_info = get_stock_info(symbol)
         return stock_info
 
-
-
-
 class StockAnalysisAgent:
     """股票分析智能体
     
@@ -279,10 +276,38 @@ class StockAnalysisAgent:
             model: 使用的模型名称
             conversation_id: 会话ID，若为 None 则自动生成
         """
-        load_dotenv()
-        self.api_key = api_key or os.getenv("DOUBAO_API_KEY")
+        # 加载环境变量，尝试多个可能的路径
+        # 1. 尝试从backend目录加载
+        backend_dir = os.path.dirname(os.path.abspath(__file__))
+        env_path_backend = os.path.join(backend_dir, ".env")
+        if os.path.exists(env_path_backend):
+            load_dotenv(dotenv_path=env_path_backend, override=False)
+        
+        # 2. 尝试从项目根目录加载
+        project_root = os.path.dirname(backend_dir)
+        env_path_root = os.path.join(project_root, ".env")
+        if os.path.exists(env_path_root):
+            load_dotenv(dotenv_path=env_path_root, override=False)
+        
+        # 3. 尝试从当前工作目录加载（默认行为）
+        load_dotenv(override=False)
+        
+        # 尝试多种方式获取API密钥（优先级：参数 > DOUBAO_API_KEY > AI_API_KEY）
+        self.api_key = api_key or os.getenv("DOUBAO_API_KEY") or os.getenv("AI_API_KEY")
+        
+        # 验证API密钥是否存在
+        if not self.api_key:
+            raise ValueError(
+                "API密钥未设置。请设置以下环境变量之一：\n"
+                "- DOUBAO_API_KEY (推荐)\n"
+                "- AI_API_KEY (备选)\n"
+                "或者在初始化时直接传递 api_key 参数"
+            )
+        
         self.base_url = base_url
         self.model = model
+        
+        # 创建OpenAI客户端，确保api_key不为None
         self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
         
         # 生成或使用提供的会话ID

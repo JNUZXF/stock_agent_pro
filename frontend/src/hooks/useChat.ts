@@ -3,7 +3,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Message, ChatSession, ApiMessage } from '../types';
-import { sendChatMessage, getConversations, getConversationDetail } from '../services/api';
+import { sendChatMessage, getConversations, getConversationDetail, createConversation } from '../services/api';
 
 // localStorage键名
 const STORAGE_KEY_CURRENT_CONVERSATION = 'stock_agent_current_conversation';
@@ -60,15 +60,19 @@ export const useChat = () => {
   const loadSessions = useCallback(async () => {
     try {
       const data = await getConversations();
-      // 按照会话ID倒序排序（会话ID格式：YYYYMMDD-HHMMSS+随机数，最新的ID更大）
-      // 确保最新的会话显示在最上面
+      // 按照更新时间倒序排序，确保最新的会话显示在最上面
       const sortedData = [...data].sort((a, b) => {
-        // 按会话ID倒序排序（字符串比较，因为ID格式固定，可以直接比较）
+        if (a.updated_at && b.updated_at) {
+          return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        }
+        // 如果没有更新时间，按会话ID倒序排序
         return b.id.localeCompare(a.id);
       });
       setSessions(sortedData);
     } catch (error) {
       console.error('Failed to load sessions:', error);
+      // 如果加载失败，至少保持空数组
+      setSessions([]);
     }
   }, []);
 
@@ -191,11 +195,36 @@ export const useChat = () => {
   }, [loadMessagesFromStorage, saveMessagesToStorage]);
 
   // 创建新会话
-  const createNewConversation = useCallback(() => {
-    setConversationId(null);
-    setMessages([]);
-    localStorage.removeItem(STORAGE_KEY_CURRENT_CONVERSATION);
-  }, []);
+  const createNewConversation = useCallback(async () => {
+    try {
+      // 生成新的会话ID（格式：YYYYMMDD-HHMMSS-随机数）
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+      const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '');
+      const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const newConversationId = `${dateStr}-${timeStr}-${randomNum}`;
+      
+      // 调用后端API创建对话
+      const newSession = await createConversation(newConversationId);
+      
+      // 更新状态
+      setConversationId(newConversationId);
+      setMessages([]);
+      localStorage.setItem(STORAGE_KEY_CURRENT_CONVERSATION, newConversationId);
+      
+      // 重新加载会话列表
+      await loadSessions();
+      
+      return newSession;
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      // 如果创建失败，至少清空本地状态
+      setConversationId(null);
+      setMessages([]);
+      localStorage.removeItem(STORAGE_KEY_CURRENT_CONVERSATION);
+      throw error;
+    }
+  }, [loadSessions]);
 
   // 初始化：恢复上次的会话（仅执行一次）
   useEffect(() => {

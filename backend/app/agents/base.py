@@ -62,18 +62,25 @@ class BaseAgent(ABC):
         """
         pass
 
-    def add_message(self, role: str, content: str, **kwargs) -> None:
+    def add_message(self, role: str, content: Optional[str] = None, **kwargs) -> None:
         """
         添加消息到对话历史
 
         Args:
             role: 角色（user/assistant/system）
-            content: 消息内容
+            content: 消息内容（可选，某些消息可能只有工具调用）
             **kwargs: 其他字段
         """
+        # 如果content为None，设置为空字符串（某些消息可能只有工具调用）
+        if content is None:
+            content = ""
+        
         message = {"role": role, "content": content, **kwargs}
         self.conversation_history.append(message)
-        logger.debug(f"添加消息: {role} - {len(content)} 字符")
+        
+        # 安全地记录日志
+        content_length = len(content) if content else 0
+        logger.debug(f"添加消息: {role} - {content_length} 字符")
 
     def get_conversation_history(self) -> List[Dict[str, Any]]:
         """获取对话历史"""

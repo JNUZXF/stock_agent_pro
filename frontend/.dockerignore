@@ -1,0 +1,16 @@
+# frontend/.dockerignore
+# Docker构建时忽略的文件和目录
+
+node_modules
+npm-debug.log
+dist
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.log
+.vscode
+.idea
+*.swp
+*.swo
+*~

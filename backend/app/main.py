@@ -91,9 +91,18 @@ app.add_middleware(ExceptionHandlerMiddleware)
 app.add_middleware(LoggingMiddleware)
 
 # 注册API路由
+# 版本化路由（推荐使用）
 app.include_router(
     api_router,
-    prefix=settings.API_V1_PREFIX
+    prefix=settings.API_V1_PREFIX,
+    tags=["API v1"]
+)
+
+# 兼容路由（向后兼容，前端使用 /api）
+app.include_router(
+    api_router,
+    prefix="/api",
+    tags=["API (兼容)"]
 )
 
 

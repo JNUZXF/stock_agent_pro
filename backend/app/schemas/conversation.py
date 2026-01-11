@@ -28,7 +28,7 @@ class MessageResponse(BaseModel):
     content: Optional[str]
     function_call: Optional[dict]
     tool_calls: Optional[list]
-    metadata: Optional[dict]
+    message_metadata: Optional[dict] = Field(None, serialization_alias="metadata")
     created_at: datetime
 
     class Config:
