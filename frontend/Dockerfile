@@ -9,8 +9,9 @@ WORKDIR /app
 # 复制package文件
 COPY package*.json ./
 
-# 安装依赖
-RUN npm ci
+# 配置 npm 使用国内镜像源并安装依赖
+RUN npm config set registry https://registry.npmmirror.com && \
+    npm ci
 
 # 复制源代码
 COPY . .

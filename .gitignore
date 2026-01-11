@@ -49,6 +49,10 @@ files/
 *.log
 *.tmp
 
+# SSL certificates
+certbot/
+nginx/ssl/
+
 # OS
 .DS_Store
 Thumbs.db

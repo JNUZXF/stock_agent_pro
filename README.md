@@ -102,6 +102,17 @@ npm run dev  # 或 yarn dev / pnpm dev
 
 在浏览器中打开 `http://localhost:5173` 即可使用股票分析智能体。
 
+## 生产环境部署（HTTPS + SSL 自动续期）
+
+**重要**：如果您需要部署到生产环境并配置 HTTPS，请参考 [DEPLOY.md](./DEPLOY.md) 文档。
+
+快速部署步骤：
+1. 确保域名 `stockagent.cc` 已解析到服务器 IP `47.113.101.218`
+2. 配置 `.env` 文件
+3. 运行 `./scripts/deploy.sh` 完成部署
+
+详细说明请查看 [DEPLOY.md](./DEPLOY.md)。
+
 ## Docker部署（推荐）
 
 使用Docker可以一键启动前后端服务，无需手动配置环境。
