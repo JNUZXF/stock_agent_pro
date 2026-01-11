@@ -1,0 +1,66 @@
+========================================
+利用新加坡服务器克隆 GitHub 项目
+========================================
+
+【最简单方案：在新加坡服务器克隆后传输】
+
+步骤 1: 登录新加坡服务器并克隆项目
+----------------------------------------
+ssh root@47.237.167.77
+cd /tmp
+git clone https://github.com/JNUZXF/stock_agent.git
+tar -czf stock_agent.tar.gz stock_agent/
+exit
+
+步骤 2: 从新加坡服务器下载到阿里云服务器
+----------------------------------------
+# 在阿里云服务器（当前服务器）上执行：
+scp root@47.237.167.77:/tmp/stock_agent.tar.gz /home/
+
+步骤 3: 解压项目
+----------------------------------------
+cd /home
+tar -xzf stock_agent.tar.gz
+rm stock_agent.tar.gz  # 可选：删除压缩包
+
+========================================
+【进阶方案：在新加坡服务器搭建代理】
+========================================
+
+如果你需要经常访问 GitHub，可以搭建代理：
+
+步骤 1: 在新加坡服务器上安装 tinyproxy
+----------------------------------------
+ssh root@47.237.167.77
+yum install -y tinyproxy  # CentOS/RHEL/AlmaLinux
+# 或
+apt-get install -y tinyproxy  # Ubuntu/Debian
+
+步骤 2: 配置 tinyproxy
+----------------------------------------
+# 获取当前阿里云服务器的 IP
+CURRENT_IP=$(hostname -I | awk '{print $1}')
+echo "Allow $CURRENT_IP" >> /etc/tinyproxy/tinyproxy.conf
+
+# 启动服务
+systemctl start tinyproxy
+systemctl enable tinyproxy
+
+# 检查状态
+systemctl status tinyproxy
+
+步骤 3: 在阿里云服务器上配置 Git 使用代理
+----------------------------------------
+git config --global http.proxy http://47.237.167.77:8888
+git config --global https.proxy http://47.237.167.77:8888
+
+步骤 4: 测试克隆
+----------------------------------------
+git clone https://github.com/JNUZXF/stock_agent.git
+
+步骤 5: 使用完后取消代理（可选）
+----------------------------------------
+git config --global --unset http.proxy
+git config --global --unset https.proxy
+
+========================================
