@@ -13,7 +13,7 @@ interface MarkdownContentProps {
 
 const MarkdownContent = ({ content }: MarkdownContentProps) => {
   return (
-    <div className="markdown-content prose prose-slate max-w-none prose-headings:font-semibold prose-headings:text-slate-800 prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base prose-p:text-slate-700 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900 prose-strong:font-semibold prose-em:text-slate-700 prose-code:text-sm prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-blue-700 prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto prose-ul:list-disc prose-ul:pl-6 prose-ol:list-decimal prose-ol:pl-6 prose-li:text-slate-700 prose-li:my-1 prose-blockquote:border-l-4 prose-blockquote:border-blue-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-slate-600 prose-table:w-full prose-table:border-collapse prose-th:bg-slate-100 prose-th:border prose-th:border-slate-300 prose-th:px-4 prose-th:py-2 prose-th:text-left prose-th:font-semibold prose-td:border prose-td:border-slate-300 prose-td:px-4 prose-td:py-2 prose-hr:border-slate-300">
+    <div className="markdown-content prose prose-slate max-w-none prose-headings:font-semibold prose-headings:text-white prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base prose-p:text-white prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-white prose-strong:font-semibold prose-em:text-white prose-code:text-sm prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-code:text-blue-700 prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto prose-ul:list-disc prose-ul:pl-6 prose-ol:list-decimal prose-ol:pl-6 prose-li:text-white prose-li:my-1 prose-blockquote:border-l-4 prose-blockquote:border-blue-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-white prose-table:w-full prose-table:border-collapse prose-th:bg-slate-100 prose-th:border prose-th:border-slate-300 prose-th:px-4 prose-th:py-2 prose-th:text-left prose-th:font-semibold prose-td:border prose-td:border-slate-300 prose-td:px-4 prose-td:py-2 prose-hr:border-slate-300">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, rehypeHighlight]}
@@ -28,10 +28,10 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
               </code>
             ) : (
               <div className="relative group my-4">
-                <div className="absolute top-2 right-2 text-xs text-slate-400 font-mono opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                <div className="absolute top-2 right-2 text-xs text-white font-mono opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   {match[1]}
                 </div>
-                <code className={`${className} block bg-slate-900 text-slate-100 rounded-lg p-4 overflow-x-auto text-sm`} {...props}>
+                <code className={`${className} block bg-slate-900 text-white rounded-lg p-4 overflow-x-auto text-sm`} {...props}>
                   {children}
                 </code>
               </div>
@@ -63,7 +63,7 @@ const MarkdownContent = ({ content }: MarkdownContentProps) => {
           // 自定义引用块样式
           blockquote({ children }: any) {
             return (
-              <blockquote className="border-l-4 border-blue-400 pl-4 my-4 italic text-slate-600 bg-blue-50/50 py-2 rounded-r">
+              <blockquote className="border-l-4 border-blue-400 pl-4 my-4 italic text-white bg-blue-50/50 py-2 rounded-r">
                 {children}
               </blockquote>
             );

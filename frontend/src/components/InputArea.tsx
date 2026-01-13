@@ -31,7 +31,7 @@ const InputArea = ({ inputText, onInputChange, onSend, isSending }: InputAreaPro
           <motion.button 
             whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.8)" }}
             whileTap={{ scale: 0.95 }}
-            className="p-3 rounded-full text-slate-400 hover:text-blue-500 transition-colors"
+            className="p-3 rounded-full text-white hover:text-blue-500 transition-colors"
           >
             <Paperclip size={20} />
           </motion.button>
@@ -48,7 +48,7 @@ const InputArea = ({ inputText, onInputChange, onSend, isSending }: InputAreaPro
               }
             }}
             placeholder="在极夜中低语..."
-            className="flex-1 bg-transparent border-none outline-none resize-none py-3 text-slate-700 placeholder:text-slate-400/60 font-light text-base max-h-32 focus:placeholder:text-slate-300"
+            className="flex-1 bg-transparent border-none outline-none resize-none py-3 text-white placeholder:text-white/60 font-light text-base max-h-32 focus:placeholder:text-white/80"
             rows={1}
             style={{ minHeight: '44px' }}
             disabled={isSending}
@@ -63,7 +63,7 @@ const InputArea = ({ inputText, onInputChange, onSend, isSending }: InputAreaPro
               p-3 rounded-full mb-1 shadow-lg transition-all duration-300 relative overflow-hidden
               ${inputText.trim() && !isSending
                 ? 'bg-slate-800 text-white shadow-blue-900/20' 
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'}
+                : 'bg-slate-200 text-white cursor-not-allowed'}
             `}
           >
             <Send size={18} className="relative z-10" />
@@ -89,7 +89,7 @@ const InputArea = ({ inputText, onInputChange, onSend, isSending }: InputAreaPro
             </motion.div>
           </div>
 
-          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400">
+          <div className="flex items-center gap-2 text-[10px] font-mono text-white">
             <span className={`w-1.5 h-1.5 rounded-full ${isSending ? 'bg-blue-400 animate-pulse' : 'bg-emerald-400'} shadow-[0_0_8px_rgba(52,211,153,0.8)]`} />
             <span>{isSending ? '思考中' : 'ONLINE'}</span>
           </div>

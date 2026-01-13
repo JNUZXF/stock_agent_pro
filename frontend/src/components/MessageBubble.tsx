@@ -26,8 +26,8 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
         className={`
           relative px-6 py-4 max-w-[85%] rounded-2xl backdrop-blur-xl border transition-all duration-300
           ${isAi 
-            ? 'bg-white/60 text-slate-700 rounded-tl-none border-white/60' 
-            : 'bg-gradient-to-br from-[#E0F2FE]/80 to-[#F0F9FF]/80 text-slate-800 rounded-tr-none border-blue-100/50'
+            ? 'bg-white/60 text-white rounded-tl-none border-white/60' 
+            : 'bg-gradient-to-br from-[#E0F2FE]/80 to-[#F0F9FF]/80 text-white rounded-tr-none border-blue-100/50'
           }
         `}
         style={{
@@ -53,7 +53,7 @@ const MessageBubble = ({ message }: MessageBubbleProps) => {
            </div>
         )}
 
-        <div className="absolute bottom-1 right-3 text-[10px] text-slate-400 font-mono opacity-60 flex items-center gap-1">
+        <div className="absolute bottom-1 right-3 text-[10px] text-white font-mono opacity-60 flex items-center gap-1">
           {message.timestamp}
           {!isAi && <span className="block w-1 h-1 rounded-full bg-blue-400" />}
         </div>

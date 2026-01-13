@@ -27,6 +27,18 @@ ENV/
 env/
 docs/
 
+# Node.js and npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# package-lock.json should be tracked for reproducible builds
+# yarn.lock
+dist/
+build/
+.vite/
+.cache/
+
 # IDE
 .vscode/
 .idea/

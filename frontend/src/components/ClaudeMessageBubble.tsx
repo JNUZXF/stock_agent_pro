@@ -79,7 +79,7 @@ export default function ClaudeMessageBubble({ message, isFirst }: ClaudeMessageB
             className={`relative inline-block max-w-full ${
               isUser
                 ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-3xl rounded-tr-md'
-                : 'bg-white/90 backdrop-blur-sm text-slate-800 rounded-3xl rounded-tl-md border border-slate-200/50 shadow-lg'
+                : 'bg-white/90 backdrop-blur-sm text-white rounded-3xl rounded-tl-md border border-slate-200/50 shadow-lg'
             } px-6 py-4`}
           >
             {/* 用户消息 - 普通文本 */}
@@ -110,7 +110,7 @@ export default function ClaudeMessageBubble({ message, isFirst }: ClaudeMessageB
             {/* 时间戳 */}
             <div
               className={`text-xs mt-2 ${
-                isUser ? 'text-blue-100' : 'text-slate-400'
+                isUser ? 'text-blue-100' : 'text-white'
               }`}
             >
               {message.timestamp}

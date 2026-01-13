@@ -3,7 +3,7 @@
  * 集成所有组件，支持深度思考模式和 3D 倾斜效果
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Box, Cpu, Sparkles, Maximize2, Code, FileText, Menu, X } from 'lucide-react';
 import { useChat } from '../hooks/useChat';
 import { ChatSession } from '../types';
@@ -11,8 +11,8 @@ import { ParticleBackground } from '../components/ui/ParticleBackground';
 import { ChatBubble } from '../components/ui/ChatBubble';
 import { InputArea } from '../components/composite/InputArea';
 import { HistoryPanel } from '../components/composite/HistoryPanel';
-import { Navigation } from '../components/layout/Navigation';
 import { cn } from '../lib/cn';
+import { typographyStyles } from '../styles/typography';
 
 const WELCOME_MESSAGE = {
   id: 'welcome',
@@ -40,6 +40,9 @@ export default function ChatPage() {
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const isUserScrollingRef = useRef(false);
 
   const {
     messages: chatMessages,
@@ -94,10 +97,61 @@ export default function ChatPage() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // 自动滚动到底部
+  // 检测用户是否在底部附近（阈值：50px）
+  const isNearBottom = useCallback(() => {
+    if (!chatAreaRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = chatAreaRef.current;
+    return scrollHeight - scrollTop - clientHeight < 50;
+  }, []);
+
+  // 监听滚动事件，检测用户手动滚动
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isSending]);
+    const chatArea = chatAreaRef.current;
+    if (!chatArea) return;
+
+    let scrollTimeout: ReturnType<typeof setTimeout>;
+
+    const handleScroll = () => {
+      // 清除之前的定时器
+      clearTimeout(scrollTimeout);
+      
+      // 标记用户正在滚动
+      isUserScrollingRef.current = true;
+      
+      // 检查是否接近底部
+      const nearBottom = isNearBottom();
+      setShouldAutoScroll(nearBottom);
+
+      // 如果用户停止滚动一段时间（300ms），重置滚动标记
+      scrollTimeout = setTimeout(() => {
+        isUserScrollingRef.current = false;
+      }, 300);
+    };
+
+    chatArea.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      chatArea.removeEventListener('scroll', handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, [isNearBottom]);
+
+  // 自动滚动到底部（仅在应该自动滚动时执行）
+  useEffect(() => {
+    if (shouldAutoScroll && !isUserScrollingRef.current) {
+      // 使用 requestAnimationFrame 确保在下一帧执行，避免与滚动事件冲突
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+  }, [messages, isSending, shouldAutoScroll]);
+
+  // 当发送新消息时，重置自动滚动状态
+  useEffect(() => {
+    if (isSending) {
+      setShouldAutoScroll(true);
+    }
+  }, [isSending]);
 
   const handleSend = () => {
     if (!inputValue.trim() || isSending) return;
@@ -141,11 +195,6 @@ export default function ChatPage() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black text-white font-sans selection:bg-cyan-500/30 flex flex-col">
-      {/* 导航栏 */}
-      <div className="relative z-20">
-        <Navigation isDeepThinking={isDeepThinking} />
-      </div>
-
       {/* 背景层 */}
       <div
         className={cn(
@@ -173,7 +222,7 @@ export default function ChatPage() {
       {/* 主玻璃容器 */}
       <div
         ref={containerRef}
-        className="relative z-10 flex flex-1 w-full h-full p-6 gap-6 transition-transform duration-100 ease-out overflow-hidden"
+        className="relative z-10 flex flex-1 w-full min-h-0 pt-4 sm:pt-6 px-0 pb-0 gap-2 sm:gap-3 transition-transform duration-100 ease-out overflow-hidden"
         style={tiltStyle}
       >
         {/* 左侧：历史会话面板 */}
@@ -190,7 +239,7 @@ export default function ChatPage() {
           </div>
         )}
 
-        {/* 移动端侧边栏遮罩和面板 */}
+            {/* 移动端侧边栏遮罩和面板 */}
         {showSidebar && isMobile && (
           <>
             {/* 遮罩层 */}
@@ -198,20 +247,22 @@ export default function ChatPage() {
               className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setShowSidebar(false)}
             />
-            {/* 侧边栏 */}
-            <div className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-80 bg-black/90 backdrop-blur-xl border-r border-white/10 z-50 md:hidden overflow-y-auto">
+            {/* 侧边栏 - 从右侧滑出，不挡住聊天内容 */}
+            <div className="fixed right-0 top-0 h-screen w-72 sm:w-80 bg-black/95 backdrop-blur-xl border-l border-white/10 z-50 md:hidden overflow-y-auto shadow-2xl">
+              {/* 关闭按钮 */}
+              <div className="sticky top-0 p-4 border-b border-white/10 bg-black/50 backdrop-blur-sm flex items-center justify-between">
+                <span className={cn('text-xs sm:text-sm font-bold tracking-widest uppercase', typographyStyles.textSecondary)}>
+                  Memory Log
+                </span>
+                <button
+                  onClick={() => setShowSidebar(false)}
+                  className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              {/* 聊天记录列表 */}
               <div className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-bold tracking-widest uppercase opacity-70">
-                    Memory Log
-                  </span>
-                  <button
-                    onClick={() => setShowSidebar(false)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
                 <HistoryPanel
                   sessions={sessions}
                   activeSessionId={conversationId}
@@ -228,80 +279,22 @@ export default function ChatPage() {
         <button
           onClick={() => setShowSidebar(!showSidebar)}
           className={cn(
-            'fixed left-4 top-20 z-30 md:hidden p-3 rounded-lg backdrop-blur-xl border border-white/10 transition-all duration-300',
+            'fixed right-4 top-4 z-30 p-2.5 sm:p-3 rounded-lg backdrop-blur-xl border transition-all duration-300',
             isDeepThinking
-              ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-              : 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30'
+              ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/30'
+              : 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/30',
+            'md:hidden'
           )}
-          aria-label="切换侧边栏"
+          aria-label="切换聊天记录"
+          title="聊天记录"
         >
-          <Menu size={20} />
+          <Menu size={18} className="sm:size-[20px]" />
         </button>
 
         {/* 中间：主界面 */}
-        <div className="flex-1 flex flex-col backdrop-blur-2xl bg-black/40 border border-white/10 rounded-3xl shadow-2xl relative overflow-hidden">
-          {/* 头部 */}
-          <header className="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-white/5">
-            <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  'p-2 rounded-lg transition-all duration-500',
-                  isDeepThinking
-                    ? 'bg-yellow-500/20 text-yellow-400'
-                    : 'bg-cyan-500/20 text-cyan-400'
-                )}
-              >
-                <Box size={20} />
-              </div>
-              <div>
-                <h1 className="font-bold text-lg tracking-wider">
-                  AETHER <span className="font-thin opacity-50">CORE</span>
-                </h1>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'w-1.5 h-1.5 rounded-full animate-pulse',
-                      isDeepThinking ? 'bg-yellow-500' : 'bg-green-500'
-                    )}
-                  />
-                  <span className="text-[10px] uppercase tracking-widest opacity-60">
-                    {isDeepThinking ? 'Deep Processing Active' : 'Systems Nominal'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              {/* 深度思考切换 */}
-              <div
-                onClick={() => setIsDeepThinking(!isDeepThinking)}
-                className={cn(
-                  'cursor-pointer group flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all duration-500',
-                  isDeepThinking
-                    ? 'border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_20px_rgba(234,179,8,0.2)]'
-                    : 'border-white/10 hover:border-cyan-500/50 bg-transparent'
-                )}
-              >
-                <Cpu
-                  size={16}
-                  className={cn(
-                    'transition-all duration-500',
-                    isDeepThinking ? 'text-yellow-400 rotate-180' : 'text-white group-hover:text-cyan-400'
-                  )}
-                />
-                <span
-                  className={cn(
-                    'text-xs font-semibold uppercase tracking-wider transition-colors duration-500',
-                    isDeepThinking ? 'text-yellow-400' : 'text-white group-hover:text-cyan-400'
-                  )}
-                >
-                  Deep Think
-                </span>
-              </div>
-            </div>
-          </header>
-
-          {/* 聊天区域 */}
-          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar relative">
+        <div className="flex-1 flex flex-col backdrop-blur-2xl bg-black/40 border border-white/10 rounded-xl sm:rounded-3xl shadow-2xl relative overflow-hidden">
+          {/* 聊天区域 - flex-1 填满所有可用空间 */}
+          <div ref={chatAreaRef} className="flex-1 overflow-y-auto px-3 sm:px-6 pt-3 sm:pt-6 pb-0 custom-scrollbar relative">
             {/* 装饰性网格线 */}
             <div
               className="absolute inset-0 pointer-events-none opacity-[0.03]"
@@ -322,57 +315,89 @@ export default function ChatPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* 输入区域 */}
-          <InputArea
-            inputText={inputValue}
-            onInputChange={setInputValue}
-            onSend={handleSend}
-            isSending={isSending}
-            isDeepThinking={isDeepThinking}
-          />
+          {/* 输入区域 - 与 Deep Think 按钮同一行 */}
+          <div className="flex-shrink-0 border-t border-white/5 flex items-center gap-2 sm:gap-4 px-2 sm:px-4 pt-2 sm:pt-3 pb-0 m-0">
+            {/* 深度思考切换 - 移到输入框同一行 */}
+            <div
+              onClick={() => setIsDeepThinking(!isDeepThinking)}
+              className={cn(
+                'cursor-pointer group flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full border transition-all duration-500 text-xs sm:text-sm flex-shrink-0',
+                isDeepThinking
+                  ? 'border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_20px_rgba(234,179,8,0.2)]'
+                  : 'border-white/10 hover:border-cyan-500/50 bg-transparent'
+              )}
+            >
+              <Cpu
+                size={14}
+                className={cn(
+                  'transition-all duration-500 sm:size-[16px]',
+                  isDeepThinking ? 'text-yellow-400 rotate-180' : 'text-white group-hover:text-cyan-400'
+                )}
+              />
+              <span
+                className={cn(
+                  'hidden sm:inline font-semibold uppercase tracking-wider transition-colors duration-500 text-[10px]',
+                  isDeepThinking ? 'text-yellow-400' : 'text-white group-hover:text-cyan-400'
+                )}
+              >
+                Deep Think
+              </span>
+            </div>
+            
+            {/* 输入框 */}
+            <div className="flex-1 relative">
+              <InputArea
+                inputText={inputValue}
+                onInputChange={setInputValue}
+                onSend={handleSend}
+                isSending={isSending}
+                isDeepThinking={isDeepThinking}
+              />
+            </div>
+          </div>
         </div>
 
         {/* 右侧：Artifact 面板 */}
         <div
           className={cn(
-            'hidden xl:flex flex-col w-80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all duration-500',
+            'hidden xl:flex flex-col w-60 xl:w-80 backdrop-blur-xl border border-white/10 rounded-2xl xl:rounded-3xl overflow-hidden shadow-2xl transition-all duration-500',
             activeArtifact
               ? 'translate-x-0 opacity-100'
               : 'translate-x-10 opacity-50 grayscale',
             isDeepThinking ? 'bg-yellow-900/5' : 'bg-cyan-900/5'
           )}
         >
-          <div className="p-5 border-b border-white/5 flex items-center justify-between">
+          <div className="p-3 sm:p-5 border-b border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles
-                size={16}
-                className={isDeepThinking ? 'text-yellow-400' : 'text-cyan-400'}
+                size={14}
+                className={cn('sm:size-[16px]', isDeepThinking ? 'text-yellow-400' : 'text-cyan-400')}
               />
-              <span className="text-sm font-bold tracking-widest uppercase">Artifact</span>
+              <span className="text-xs sm:text-sm font-bold tracking-widest uppercase">Artifact</span>
             </div>
-            <Maximize2 size={14} className="opacity-50 hover:opacity-100 cursor-pointer" />
+                  <Maximize2 size={12} className={cn('sm:size-[14px] cursor-pointer transition-opacity', typographyStyles.textTertiary, 'hover:text-white/80')} />
           </div>
 
-          <div className="flex-1 p-5 overflow-y-auto custom-scrollbar relative">
+          <div className="flex-1 p-3 sm:p-5 overflow-y-auto custom-scrollbar relative">
             {!activeArtifact ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 opacity-30">
-                <Box size={48} className="mb-4 animate-bounce-slow" />
-                <p className="text-sm">Waiting for output generation...</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 sm:p-6 opacity-30">
+                <Box size={36} className="sm:size-[48px] mb-4 animate-bounce-slow" />
+                <p className="text-xs sm:text-sm">Waiting for output generation...</p>
               </div>
             ) : (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="flex items-center gap-2 mb-4">
                   {activeArtifact.type === 'code' ? (
-                    <Code size={16} className="text-pink-400" />
+                    <Code size={14} className="sm:size-[16px] text-pink-400" />
                   ) : (
-                    <FileText size={16} />
+                    <FileText size={14} className="sm:size-[16px]" />
                   )}
-                  <span className="text-xs font-mono text-pink-300 bg-pink-500/10 px-2 py-0.5 rounded">
+                  <span className="text-xs font-mono text-pink-300 bg-pink-500/10 px-2 py-0.5 rounded break-words">
                     {activeArtifact.title}
                   </span>
                 </div>
-                <div className="bg-black/40 rounded-lg p-4 font-mono text-xs border border-white/5 shadow-inner text-gray-300 overflow-x-auto">
-                  <pre>{activeArtifact.content}</pre>
+                <div className="bg-black/40 rounded-lg p-3 sm:p-4 font-mono text-xs border border-white/5 shadow-inner text-white overflow-x-auto">
+                  <pre className="break-words whitespace-pre-wrap">{activeArtifact.content}</pre>
                 </div>
 
                 <div className="mt-6 space-y-3">
@@ -384,7 +409,7 @@ export default function ChatPage() {
                       )}
                     />
                   </div>
-                  <div className="flex justify-between text-[10px] uppercase tracking-widest opacity-50">
+                  <div className="flex justify-between text-[8px] sm:text-[10px] uppercase tracking-widest" style={{color: 'rgba(255, 255, 255, 0.6)'}}>
                     <span>Stability: 98%</span>
                     <span>Complexity: High</span>
                   </div>
@@ -394,11 +419,11 @@ export default function ChatPage() {
           </div>
 
           {/* 底部按钮 */}
-          <div className="p-5 border-t border-white/5">
+          <div className="p-3 sm:p-5 border-t border-white/5">
             <button
               type="button"
               className={cn(
-                'w-full py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all duration-300 relative overflow-hidden group',
+                'w-full py-2 sm:py-3 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 relative overflow-hidden group',
                 isDeepThinking
                   ? 'bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500 hover:text-black'
                   : 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-black'

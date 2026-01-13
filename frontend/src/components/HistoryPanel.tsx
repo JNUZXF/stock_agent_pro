@@ -31,16 +31,16 @@ const HistoryPanel = ({ sessions, activeSession, onSelectSession, onNewConversat
     >
       <div className="flex items-center gap-3 mb-4 pl-4 group">
         <div className="p-2 bg-white/40 backdrop-blur-md rounded-lg shadow-sm border border-white/50 group-hover:rotate-180 transition-transform duration-700">
-          <Wind size={20} className="text-slate-600" />
+          <Wind size={20} className="text-white" />
         </div>
-        <span className="text-lg font-light tracking-widest text-slate-600 uppercase group-hover:text-blue-500 transition-colors">Archive</span>
+        <span className="text-lg font-light tracking-widest text-white uppercase group-hover:text-blue-500 transition-colors">Archive</span>
       </div>
 
       {/* 新建会话按钮 */}
       {onNewConversation && (
         <motion.button
           onClick={onNewConversation}
-          className="mx-4 mb-4 px-4 py-2 bg-white/40 backdrop-blur-md rounded-xl border border-white/50 text-sm font-medium text-slate-700 hover:bg-white/60 hover:border-blue-200 transition-all duration-300"
+          className="mx-4 mb-4 px-4 py-2 bg-white/40 backdrop-blur-md rounded-xl border border-white/50 text-sm font-medium text-white hover:bg-white/60 hover:border-blue-200 transition-all duration-300"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -66,8 +66,8 @@ const HistoryPanel = ({ sessions, activeSession, onSelectSession, onNewConversat
             `}
           >
             <div className="relative z-10">
-              <div className="text-[10px] text-slate-400 mb-1 font-mono tracking-tighter uppercase">{session.date}</div>
-              <div className="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors line-clamp-1">
+              <div className="text-[10px] text-white mb-1 font-mono tracking-tighter uppercase">{session.date}</div>
+              <div className="text-sm font-medium text-white group-hover:text-blue-600 transition-colors line-clamp-1">
                 {session.title}
               </div>
             </div>

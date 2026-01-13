@@ -42,7 +42,7 @@ export default function ClaudeInputArea({
               placeholder="输入你的问题... (Shift + Enter 换行)"
               disabled={isSending}
               rows={1}
-              className="flex-1 resize-none bg-transparent text-slate-800 placeholder-slate-400 focus:outline-none min-h-[24px] max-h-[200px] leading-6 py-1"
+              className="flex-1 resize-none bg-transparent text-white placeholder-white/50 focus:outline-none min-h-[24px] max-h-[200px] leading-6 py-1"
               style={{
                 scrollbarWidth: 'thin',
               }}
@@ -62,7 +62,7 @@ export default function ClaudeInputArea({
               className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
                 inputText.trim() && !isSending
                   ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg hover:shadow-xl hover:shadow-indigo-500/50'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  : 'bg-slate-200 text-white cursor-not-allowed'
               }`}
             >
               {isSending ? (
@@ -80,7 +80,7 @@ export default function ClaudeInputArea({
 
           {/* 提示文字 */}
           <div className="flex items-center justify-between mt-2 px-1">
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-white">
               {isSending ? (
                 <span className="flex items-center gap-2">
                   <motion.span
@@ -94,7 +94,7 @@ export default function ClaudeInputArea({
                 <span>按 Enter 发送，Shift + Enter 换行</span>
               )}
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-white">
               {inputText.length > 0 && `${inputText.length} 字符`}
             </div>
           </div>
