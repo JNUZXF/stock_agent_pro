@@ -36,11 +36,12 @@ async def chat(
         Server-Sent Events流式响应
     """
     async def generate():
-        """生成SSE流"""
+        """生成SSE流（真正的异步）"""
         chat_service = ChatService(db)
 
         try:
-            for response in chat_service.chat_stream(
+            # 使用异步流式输出
+            async for response in chat_service.chat_stream_async(
                 user_id=int(user_id),
                 message=request.message,
                 conversation_id=request.conversation_id,
@@ -48,7 +49,10 @@ async def chat(
             ):
                 # 转换为JSON并添加SSE格式
                 data = response.model_dump_json()
-                yield f"data: {data}\n\n"
+                # 确保每个chunk都立即发送，不被缓冲
+                chunk = f"data: {data}\n\n"
+                # 使用bytes编码，确保立即发送
+                yield chunk.encode('utf-8')
 
         except AgentExecutionError as e:
             logger.error(f"智能体执行失败: {str(e)}")
@@ -56,7 +60,8 @@ async def chat(
                 type="error",
                 error=str(e)
             )
-            yield f"data: {error_response.model_dump_json()}\n\n"
+            chunk = f"data: {error_response.model_dump_json()}\n\n"
+            yield chunk.encode('utf-8')
 
         except Exception as e:
             logger.error(f"聊天失败: {str(e)}", exc_info=True)
@@ -64,14 +69,16 @@ async def chat(
                 type="error",
                 error=f"服务器错误: {str(e)}"
             )
-            yield f"data: {error_response.model_dump_json()}\n\n"
+            chunk = f"data: {error_response.model_dump_json()}\n\n"
+            yield chunk.encode('utf-8')
 
     return StreamingResponse(
         generate(),
         media_type="text/event-stream",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-transform",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"
+            "X-Accel-Buffering": "no",
+            "X-Content-Type-Options": "nosniff"
         }
     )

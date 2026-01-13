@@ -5,7 +5,9 @@ import logging
 import json
 import sys
 import os
+import asyncio
 from typing import Dict, Any
+from concurrent.futures import ThreadPoolExecutor
 import pysnowball as ball
 
 from app.agents.tools.base import BaseTool
@@ -13,6 +15,9 @@ from app.agents.tools.registry import register_tool
 from app.core.exceptions import ToolExecutionError
 
 logger = logging.getLogger(__name__)
+
+# 创建线程池用于执行同步的pysnowball API调用
+_executor = ThreadPoolExecutor(max_workers=10)
 
 # 设置默认编码为UTF-8
 os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -53,7 +58,27 @@ class StockInfoTool(BaseTool):
 
     def execute(self, **kwargs) -> str:
         """
-        执行股票信息查询
+        执行股票信息查询（同步接口，内部调用异步实现）
+
+        Args:
+            symbol: 股票代码
+
+        Returns:
+            股票详细信息的字符串表示
+        """
+        # 获取或创建事件循环
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        # 运行异步方法
+        return loop.run_until_complete(self.execute_async(**kwargs))
+    
+    async def execute_async(self, **kwargs) -> str:
+        """
+        异步执行股票信息查询
 
         Args:
             symbol: 股票代码
@@ -94,27 +119,42 @@ class StockInfoTool(BaseTool):
             
             ball.set_token(token)
 
-            # 获取股票基本信息，使用UTF-8编码处理返回结果
-            cash_flow = self._safe_get_data(lambda: ball.cash_flow(symbol))
-            income_statement = self._safe_get_data(lambda: ball.income(symbol))
-            business_analysis = self._safe_get_data(lambda: ball.business(symbol))
-            holders = self._safe_get_data(lambda: ball.top_holders(symbol))
+            # 并发获取股票基本信息，使用UTF-8编码处理返回结果
+            # 使用asyncio.gather并发执行多个API调用，大幅提升速度
+            cash_flow_task = self._safe_get_data_async(lambda: ball.cash_flow(symbol))
+            income_task = self._safe_get_data_async(lambda: ball.income(symbol))
+            business_task = self._safe_get_data_async(lambda: ball.business(symbol))
+            holders_task = self._safe_get_data_async(lambda: ball.top_holders(symbol))
+            
+            # 并发执行所有API调用
+            cash_flow, income_statement, business_analysis, holders = await asyncio.gather(
+                cash_flow_task,
+                income_task,
+                business_task,
+                holders_task,
+                return_exceptions=True
+            )
+            
+            # 处理可能的异常
+            for i, result in enumerate([cash_flow, income_statement, business_analysis, holders]):
+                if isinstance(result, Exception):
+                    logger.warning(f"API调用 {i} 失败: {result}")
 
             # 格式化返回结果，确保使用UTF-8编码
             result = f"""
 股票代码: {symbol}
 
 【现金流分析】
-{self._format_dict(cash_flow)}
+{self._format_dict(cash_flow if not isinstance(cash_flow, Exception) else None)}
 
 【收入分析】
-{self._format_dict(income_statement)}
+{self._format_dict(income_statement if not isinstance(income_statement, Exception) else None)}
 
 【主营业务分析】
-{self._format_dict(business_analysis)}
+{self._format_dict(business_analysis if not isinstance(business_analysis, Exception) else None)}
 
 【主要股东】
-{self._format_dict(holders)}
+{self._format_dict(holders if not isinstance(holders, Exception) else None)}
 """
             logger.info(f"股票信息查询成功: {symbol}")
             # 确保返回的字符串是UTF-8编码
@@ -129,9 +169,56 @@ class StockInfoTool(BaseTool):
             )
     
     @staticmethod
+    async def _safe_get_data_async(func):
+        """
+        异步安全获取数据，处理编码问题
+        
+        Args:
+            func: 调用pysnowball API的函数
+            
+        Returns:
+            处理后的数据
+        """
+        loop = asyncio.get_event_loop()
+        
+        try:
+            # 在线程池中执行同步API调用
+            data = await loop.run_in_executor(_executor, func)
+            
+            # 如果数据为空，直接返回
+            if data is None:
+                return None
+            
+            # 将数据转换为JSON字符串再解析，确保编码正确
+            # 这样可以处理所有编码问题，包括latin-1编码错误
+            try:
+                json_str = json.dumps(data, ensure_ascii=False, default=str)
+                return json.loads(json_str)
+            except (UnicodeEncodeError, UnicodeDecodeError, TypeError) as e:
+                logger.warning(f"JSON序列化/反序列化时出现编码问题: {str(e)}，尝试修复")
+                # 如果JSON处理失败，尝试递归处理数据
+                return StockInfoTool._fix_encoding(data)
+        except (UnicodeEncodeError, UnicodeDecodeError) as e:
+            logger.warning(f"编码错误，尝试修复: {str(e)}")
+            # 如果出现编码错误，尝试使用JSON序列化/反序列化来修复
+            try:
+                data = await loop.run_in_executor(_executor, func)
+                if data is None:
+                    return None
+                json_str = json.dumps(data, ensure_ascii=False, default=str)
+                return json.loads(json_str)
+            except Exception as e2:
+                logger.error(f"修复编码错误失败: {str(e2)}")
+                raise ToolExecutionError(f"数据编码处理失败: {str(e2)}")
+        except Exception as e:
+            # 其他异常直接抛出
+            logger.error(f"获取数据失败: {str(e)}")
+            raise
+    
+    @staticmethod
     def _safe_get_data(func):
         """
-        安全获取数据，处理编码问题
+        同步安全获取数据，处理编码问题（保留用于向后兼容）
         
         Args:
             func: 调用pysnowball API的函数

@@ -17,7 +17,14 @@ const WELCOME_MESSAGE: Message = {
 export default function ChatPage() {
   const [inputText, setInputText] = useState('');
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
-  const [showSidebar, setShowSidebar] = useState(false);
+  // 桌面端默认显示侧边栏，移动端默认隐藏
+  const [showSidebar, setShowSidebar] = useState(() => {
+    // 使用媒体查询判断是否为桌面端
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024; // lg断点
+    }
+    return false;
+  });
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +60,24 @@ export default function ChatPage() {
     }
   }, [conversationId, sessions]);
 
+  // 监听窗口大小变化，自动调整侧边栏显示状态
+  useEffect(() => {
+    const handleResize = () => {
+      // 桌面端（lg及以上）默认显示，移动端默认隐藏
+      if (window.innerWidth >= 1024) {
+        setShowSidebar(true);
+      } else {
+        setShowSidebar(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    // 初始化时也检查一次
+    handleResize();
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // 自动滚动到底部（平滑滚动）
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -81,10 +106,11 @@ export default function ChatPage() {
       <ArcticBackground />
 
       {/* 侧边栏 - 历史记录 */}
-      <AnimatePresence>
+      {/* 桌面端：始终显示；移动端：通过showSidebar控制 */}
+      <AnimatePresence mode="wait">
         {showSidebar && (
           <>
-            {/* 遮罩层 */}
+            {/* 遮罩层 - 仅移动端显示 */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -99,7 +125,7 @@ export default function ChatPage() {
               animate={{ x: 0 }}
               exit={{ x: -320 }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed left-0 top-0 h-full w-80 bg-white/80 backdrop-blur-xl border-r border-slate-200/50 shadow-2xl z-50 lg:relative lg:z-0"
+              className="fixed left-0 top-0 h-full w-80 bg-white/80 backdrop-blur-xl border-r border-slate-200/50 shadow-2xl z-50 lg:relative lg:z-0 lg:shadow-none lg:border-r lg:border-slate-200/50"
             >
               <div className="flex flex-col h-full p-6">
                 {/* 头部 */}
@@ -168,11 +194,12 @@ export default function ChatPage() {
         {/* 顶部工具栏 */}
         <div className="flex items-center justify-between px-6 py-4 bg-white/60 backdrop-blur-xl border-b border-slate-200/50">
           <div className="flex items-center gap-3">
+            {/* 移动端菜单按钮 */}
             <button
-              onClick={() => setShowSidebar(true)}
+              onClick={() => setShowSidebar(!showSidebar)}
               className="lg:hidden p-2 hover:bg-slate-200/50 rounded-lg transition-colors"
             >
-              <Menu className="w-5 h-5 text-slate-600" />
+              {showSidebar ? <X className="w-5 h-5 text-slate-600" /> : <Menu className="w-5 h-5 text-slate-600" />}
             </button>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center">
