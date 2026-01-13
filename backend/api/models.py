@@ -9,6 +9,7 @@ class ChatRequest(BaseModel):
     """聊天请求模型"""
     message: str = Field(..., description="用户消息内容", min_length=1)
     conversation_id: Optional[str] = Field(None, description="会话ID，不提供则创建新会话")
+    user_id: Optional[str] = Field(None, description="用户ID，不提供则自动生成游客ID")
 
 
 class ChatChunkResponse(BaseModel):

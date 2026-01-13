@@ -51,8 +51,11 @@ async def chat(request: ChatRequest):
         SSE流式响应
     """
     try:
-        # 获取或创建Agent实例
-        agent = agent_service.get_or_create_agent(request.conversation_id)
+        # 获取或创建Agent实例（如果没有提供user_id，会自动生成游客ID）
+        agent = agent_service.get_or_create_agent(
+            conversation_id=request.conversation_id,
+            user_id=request.user_id
+        )
         
         def generate_response() -> Generator[bytes, None, None]:
             """生成SSE流式响应"""
