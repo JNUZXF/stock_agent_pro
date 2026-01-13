@@ -3,6 +3,7 @@
 """
 import json
 import logging
+import time
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -37,9 +38,15 @@ async def chat(
     """
     async def generate():
         """生成SSE流（真正的异步）"""
+        api_perf_start = time.time()
+        logger.info(f"[PERF] API端点开始处理请求")
+        
         chat_service = ChatService(db)
+        perf_service_created = time.time()
+        logger.info(f"[PERF] 创建ChatService耗时: {(perf_service_created - api_perf_start) * 1000:.2f}ms")
 
         try:
+            first_chunk_time = None
             # 使用异步流式输出
             async for response in chat_service.chat_stream_async(
                 user_id=int(user_id),
@@ -47,8 +54,18 @@ async def chat(
                 conversation_id=request.conversation_id,
                 agent_type=request.agent_type
             ):
+                if first_chunk_time is None:
+                    first_chunk_time = time.time()
+                    time_to_first_chunk = (first_chunk_time - api_perf_start) * 1000
+                    logger.info(f"[PERF] ⚡ 首Token到达API层耗时: {time_to_first_chunk:.2f}ms")
+                
                 # 转换为JSON并添加SSE格式
+                perf_json_start = time.time()
                 data = response.model_dump_json()
+                perf_json_end = time.time()
+                if first_chunk_time and perf_json_end - first_chunk_time < 0.001:  # 只在第一个chunk记录
+                    logger.info(f"[PERF] JSON序列化耗时: {(perf_json_end - perf_json_start) * 1000:.2f}ms")
+                
                 # 确保每个chunk都立即发送，不被缓冲
                 chunk = f"data: {data}\n\n"
                 # 使用bytes编码，确保立即发送

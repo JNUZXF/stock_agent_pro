@@ -6,6 +6,7 @@ import json
 import sys
 import os
 import asyncio
+import time
 from typing import Dict, Any
 from concurrent.futures import ThreadPoolExecutor
 import pysnowball as ball
@@ -86,6 +87,7 @@ class StockInfoTool(BaseTool):
         Returns:
             股票详细信息的字符串表示
         """
+        tool_start_time = time.time()
         symbol = kwargs.get("symbol")
 
         if not symbol:
@@ -101,6 +103,7 @@ class StockInfoTool(BaseTool):
             # 确保token字符串使用UTF-8编码
             import os
             from dotenv import load_dotenv
+            perf_token_start = time.time()
             load_dotenv()
             
             xq_token = os.getenv("xq_a_token", "")
@@ -118,9 +121,12 @@ class StockInfoTool(BaseTool):
                 token = token.encode('utf-8', errors='ignore').decode('utf-8')
             
             ball.set_token(token)
+            perf_token_end = time.time()
+            logger.info(f"[PERF] Token设置耗时: {(perf_token_end - perf_token_start) * 1000:.2f}ms")
 
             # 并发获取股票基本信息，使用UTF-8编码处理返回结果
             # 使用asyncio.gather并发执行多个API调用，大幅提升速度
+            perf_api_start = time.time()
             cash_flow_task = self._safe_get_data_async(lambda: ball.cash_flow(symbol))
             income_task = self._safe_get_data_async(lambda: ball.income(symbol))
             business_task = self._safe_get_data_async(lambda: ball.business(symbol))
@@ -134,6 +140,8 @@ class StockInfoTool(BaseTool):
                 holders_task,
                 return_exceptions=True
             )
+            perf_api_end = time.time()
+            logger.info(f"[PERF] 股票API并发调用总耗时: {(perf_api_end - perf_api_start) * 1000:.2f}ms")
             
             # 处理可能的异常
             for i, result in enumerate([cash_flow, income_statement, business_analysis, holders]):

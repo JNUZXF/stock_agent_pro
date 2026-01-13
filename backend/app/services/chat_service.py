@@ -4,6 +4,7 @@
 """
 import logging
 import asyncio
+import time
 from typing import Generator, Optional, AsyncGenerator
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -90,9 +91,15 @@ class ChatService:
         Raises:
             AgentExecutionError: 智能体执行失败
         """
+        # 性能计时开始
+        perf_timestamps = {}
+        perf_timestamps['service_start'] = time.time()
+        
         # 先快速生成conversation_id，不阻塞
         if not conversation_id:
             conversation_id = self._generate_conversation_id()
+        perf_timestamps['conversation_id_generated'] = time.time()
+        logger.info(f"[PERF] 生成conversation_id耗时: {(perf_timestamps['conversation_id_generated'] - perf_timestamps['service_start']) * 1000:.2f}ms")
 
         # 获取或创建智能体（这一步很快，不涉及数据库写入）
         agent = agent_manager.get_agent(
@@ -100,17 +107,25 @@ class ChatService:
             conversation_id=conversation_id,
             agent_type=agent_type
         )
+        perf_timestamps['agent_obtained'] = time.time()
+        logger.info(f"[PERF] 获取智能体耗时: {(perf_timestamps['agent_obtained'] - perf_timestamps['conversation_id_generated']) * 1000:.2f}ms")
 
         # 立即开始流式输出，不等待数据库操作
         assistant_response = ""
         first_chunk_sent = False
         db_task = None
+        perf_timestamps['before_agent_chat'] = time.time()
+        logger.info(f"[PERF] 准备调用agent.chat_async，总耗时: {(perf_timestamps['before_agent_chat'] - perf_timestamps['service_start']) * 1000:.2f}ms")
 
         try:
             # 流式生成回复 - 立即开始，不等待数据库操作
             async for chunk in agent.chat_async(message):
                 if not first_chunk_sent:
                     first_chunk_sent = True
+                    perf_timestamps['first_chunk_received'] = time.time()
+                    time_to_first_chunk = (perf_timestamps['first_chunk_received'] - perf_timestamps['service_start']) * 1000
+                    logger.info(f"[PERF] ⚡ 首Token到达服务层耗时: {time_to_first_chunk:.2f}ms")
+                    
                     # 第一个chunk到达时，在后台异步处理数据库操作（完全不阻塞）
                     db_task = asyncio.create_task(
                         self._save_conversation_and_user_message(
